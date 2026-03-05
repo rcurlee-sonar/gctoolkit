@@ -47,7 +47,7 @@ jobs:
           SONAR_ARCHITECTURE_PREVIEW_ENABLE: true
           SONAR_ARCHITECTURE_PREVIEW_AVAILABLE: true
         run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sonarsource_gctoolkit-pm-sandbox  -Dsonar.architecture.visualization.enabled=false -Dsonar.architecture.enable=true -Dsonar.architecture.preview.enable=true -Dsonar.architecture.preview.available=true -DskipTests
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=rcurlee-sonar_gctoolkit -Dsonar.architecture.visualization.enabled=false -Dsonar.architecture.enable=true -Dsonar.architecture.preview.enable=true -Dsonar.architecture.preview.available=true -DskipTests
           ls -lR ./target/sonar/architecture/exports/
           echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
           echo "DATE=$(echo $(date +'%Y-%m-%d'))" >> $GITHUB_ENV
