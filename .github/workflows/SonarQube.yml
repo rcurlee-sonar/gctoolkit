@@ -1,0 +1,58 @@
+name: SonarQube
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # Trigger at 1:00 AM UTC on weekdays (Monday-Friday)
+  schedule:
+    - cron: '0 1 * * 1-5'
+jobs:
+  build:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - run: git checkout main
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'zulu' # Alternative distribution options are available.
+          cache: 'maven'
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build and analyze
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ARCHITECTURE_EXPORT_GRAPHS: true
+          SONAR_ARCHITECTURE_EXPORT_FLAVOR: true
+          SONAR_ARCHITECTURE_EXPORT_ISSUES: true
+          SONAR_ARCHITECTURE_VISUALIZATION_ENABLED: false
+          SONAR_ARCHITECTURE_ENABLE: true
+          SONAR_ARCHITECTURE_PREVIEW_ENABLE: true
+          SONAR_ARCHITECTURE_PREVIEW_AVAILABLE: true
+        run: |
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sonarsource_gctoolkit-pm-sandbox  -Dsonar.architecture.visualization.enabled=false -Dsonar.architecture.enable=true -Dsonar.architecture.preview.enable=true -Dsonar.architecture.preview.available=true -DskipTests
+          ls -lR ./target/sonar/architecture/exports/
+          echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+          echo "DATE=$(echo $(date +'%Y-%m-%d'))" >> $GITHUB_ENV
+      - name: Store dna xml & json files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DATE }}-${{ github.event.repository.name }}-${{ env.SHORT_SHA }}-dna-scan-artifacts
+          path: ./target/sonar/architecture/exports/
